@@ -1,0 +1,52 @@
+---
+description: Maddevs meeting-room booking — scope, stack, deliverables (task.md)
+alwaysApply: true
+---
+
+# Meeting room booking (test task)
+
+**Goal:** UI to book a **meeting room** within one **work day (09:00–18:00)**. Authoritative spec: [`task.md`](../../task.md). If ambiguous — **ask**; do not guess silently.
+
+## User capabilities (task.md)
+
+- Select **date**
+- View **existing bookings** for that date
+- Choose **start** and **end** time
+- **Create**, **edit**, **delete** booking
+- **Display** (pick one): list, timeline, slot grid, or day calendar
+
+## What reviewers expect (task.md)
+
+- Solid **business logic** and **validation**
+- UI states: **loading**, **empty**, **error**, **form submitting**
+- **Server errors**, including **409 conflicts**
+- **API layer separate from UI**, easy to swap for a real backend
+- **Readable TypeScript** and clear **code structure**
+- **Responsive** layout and basic **accessibility**
+- **Engineering quality** over visual design
+
+## Stack (task.md)
+
+- **Next.js App Router** + **TypeScript** (task also allows React / Vue — this repo uses Next)
+- Styles, state, forms — **your choice**; UI libs and icons **allowed**
+- **No** real backend, auth, DB, or integrations — **mock API** only (Route Handlers + in-memory store; **MSW** etc. OK if UI uses `bookings-client` only)
+
+## Timebox (task.md)
+
+**4–6 hours.** If you stop early: README must say what you would finish and **priorities**.
+
+## Deliverables (task.md)
+
+- Link to **repository**
+- **README:** how to run; what is done / not done; **time spent**; if incomplete — next steps and priorities
+- **Deployed demo** (Vercel, Netlify, …)
+- **AI chat** transcript
+
+## Suggested layout
+
+```text
+app/page.tsx  app/api/bookings/  app/api/bookings/[id]/
+lib/bookings/  lib/api/bookings-client.ts  components/bookings/
+```
+
+Domain rules **1–8:** [`booking-domain.mdc`](./booking-domain.mdc). API contract: [`bookings-api.mdc`](./bookings-api.mdc).

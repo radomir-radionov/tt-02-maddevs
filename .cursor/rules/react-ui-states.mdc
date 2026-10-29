@@ -1,0 +1,37 @@
+---
+description: Booking UI — task.md flows, states, rule 8 UX
+globs: "**/*.tsx"
+alwaysApply: false
+---
+
+# Booking UI (task.md)
+
+## Flows
+
+Date → list bookings for date → create / edit / delete with start, end, optional `title`. Reflect **09:00–18:00** in controls and validation messages.
+
+## States reviewers expect (task.md)
+
+| State      | Requirement                              |
+| ---------- | ---------------------------------------- |
+| Loading    | While fetching bookings                  |
+| Empty      | No bookings on selected date             |
+| Error      | Load or mutation failure; user-visible   |
+| Submitting | Form send in progress (`отправка формы`) |
+
+## Rule 8 — 409 and other server errors
+
+- **409 when UI showed free slot:** expected; not a bug
+- **Clear message** to the user
+- **Update bookings list** after conflict
+- **Preserve** typed form values (do not wipe on error)
+- Other **server errors:** show feedback; no silent failures
+
+## Structure
+
+- Hooks (`useBookings`, `useBookingForm`, …) for data/mutations; thin components in `components/bookings/`
+
+## Accessibility & responsive (task.md)
+
+- Labels / names on inputs and icon buttons; dialog focus; `aria-live` or `role="alert"` for errors
+- Works on narrow screens (stack, scroll timeline/grid)

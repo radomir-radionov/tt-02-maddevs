@@ -1,36 +1,98 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Бронирование переговорной комнаты (Maddevs test task)
 
-## Getting Started
+Web UI для бронирования переговорной в рабочий день **09:00–18:00**. Спецификация: [`task.md`](task.md).
 
-First, run the development server:
+## Требования
+
+- Node.js 20+
+- npm
+
+## Как запустить
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Открыть [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Production-сборка:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm start
+```
 
-## Learn More
+## Статус по заданию
 
-To learn more about Next.js, take a look at the following resources:
+**`+`** — сделано, **`-`** — не сделано (префикс в начале строки, не markdown-список).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Задача
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Реализовать интерфейс бронирования переговорной комнаты в течение рабочего дня (09:00–18:00).
 
-## Deploy on Vercel
+**+** выбрать дату (date picker);  
+**+** посмотреть существующие бронирования на выбранную дату (список + таймлайн дня);  
+**+** выбрать время начала и окончания;  
+**+** создать бронирование;  
+**+** редактировать бронирование;  
+**+** удалить бронирование;  
+**+** формат отображения: таймлайн (09:00–18:00) и список броней.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Бизнес-правила
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**+** время начала и окончания — в пределах рабочего дня (сервер + клиент);  
+**+** start < end;  
+**+** минимальная длительность — 30 минут;  
+**+** максимальная длительность — 2 часа;  
+**+** бронирования не пересекаются; касание границ допустимо (полуинтервалы [start, end));  
+**+** нельзя бронировать прошедшее время;  
+**+** для сегодня прошедшие слоты недоступны в UI;  
+**+** для прошедших дат создание брони недоступно (UI + сервер);  
+**+** при редактировании текущая бронь не конфликтует сама с собой (excludeId);  
+**+** сервер может вернуть 409 при конфликте; UI показывает сообщение, обновляет список, сохраняет введённые в форму данные.
+
+### Что важно показать
+
+**+** аккуратная бизнес-логика и валидация (lib/bookings/validate.ts, общие правила для API и формы);  
+**+** состояния UI: загрузка, пустое состояние, ошибка (с retry), отправка формы;  
+**+** обработка серверных ошибок, в том числе конфликтов;  
+**+** разделение API и UI: UI → lib/api/bookings-client.ts → Route Handlers → lib/bookings/;  
+**+** TypeScript, понятная структура (app/, components/bookings/, hooks/, lib/);  
+**+** адаптивная вёрстка и базовая доступность (labels, aria-live, клавиатура).
+
+### Стек и mock API
+
+**+** Next.js (App Router) + TypeScript;  
+**+** mock API: Route Handlers + in-memory store (lib/bookings/store.ts);  
+**+** GET /api/bookings?date=YYYY-MM-DD;  
+**+** POST /api/bookings;  
+**+** PATCH /api/bookings/:id;  
+**+** DELETE /api/bookings/:id;  
+**+** тип Booking: id, date, start, end, опционально title;  
+**+** сервер валидирует бизнес-правила и возвращает конфликт (409).
+
+### Что сдать (task.md)
+
+**+** README: как запустить, статус по пунктам, время (разделы ниже);  
+**-** ссылка на deployed demo (URL — после деплоя);  
+**-** указано фактическое время в разделе «Сколько времени заняло» (заполнить перед сдачей).
+
+## Сколько времени заняло
+
+_(указать перед сдачей, ориентир по заданию: 4–6 часов)_
+
+## Deploy (Vercel)
+
+1. Push репозитория на GitHub.
+2. Import проекта в [Vercel](https://vercel.com).
+3. Deploy (настройки Next.js по умолчанию).
+
+**Deployed demo URL:** _(добавить после деплоя)_
+
+## Чеклист сдачи
+
+- [ ] Ссылка на репозиторий
+- [ ] README: запуск, сделано / не сделано, время
+- [ ] Deployed demo
+- [ ] Чат-переписка с AI

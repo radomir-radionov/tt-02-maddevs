@@ -1,0 +1,16 @@
+---
+description: TypeScript — readable structure (task.md)
+globs: "**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# TypeScript (task.md: readable TS, clear structure)
+
+- No `any`; prefer discriminated unions for validation and API results
+- Exhaustive `switch` on unions (`default: never`)
+- Prefer `type` over `interface` unless merging
+- Imports at file top only (unless documented circular dependency)
+
+**Layout:** domain logic in `lib/bookings/` (rules 1–7, time, conflicts, store). Route Handlers stay thin. UI imports domain only for shared pure validation UX — not duplicated ad hoc in JSX.
+
+**API/UI split:** components import `bookings-client`, not Route Handlers or store directly.

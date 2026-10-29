@@ -1,0 +1,28 @@
+---
+description: Booking business rules 1–8 (matches task.md)
+alwaysApply: true
+---
+
+# Booking domain rules (task.md § business rules)
+
+Server (**Route Handlers**) must enforce all rules via `lib/bookings/`. Client may reuse the same pure functions for UX; server is source of truth.
+
+1. **Working day** — `start` and `end` within **09:00–18:00** on `date`.
+2. **Order** — `start` < `end`.
+3. **Min duration** — 30 minutes.
+4. **Max duration** — 2 hours.
+5. **No overlap** — bookings on the same `date` must not intersect.
+   - **Touching is OK:** 10:00–11:00 and 11:00–12:00 (use half-open intervals `[start, end)`; overlap iff `a.start < b.end && b.start < a.end`).
+6. **No past time** — cannot book in the past.
+   - **Today:** past time slots unavailable in UI and rejected by server.
+   - **Past dates:** creating a new booking unavailable (UI + server).
+7. **Edit** — conflict check must **exclude** the booking being updated (`id`), so it does not conflict with itself.
+8. **Server conflict vs UI** — server may return **409** even if UI showed a free slot; this is **expected, not a bug**. UI must: show a clear message; refresh the bookings list; **keep** user-entered form data. Details: `react-ui-states.mdc`.
+
+## Payload (validation applies to create/update)
+
+`date` `YYYY-MM-DD`; `start` / `end` `HH:mm`; optional `title`.
+
+## Validation shape
+
+Prefer `{ ok: true } | { ok: false; code: string; message: string }` shared by handlers and forms.

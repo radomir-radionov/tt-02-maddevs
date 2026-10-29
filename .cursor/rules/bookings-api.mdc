@@ -1,0 +1,44 @@
+---
+description: Bookings REST API — task.md contract and layers
+globs: app/api/**/*.ts,lib/api/**/*.ts,lib/bookings/**/*.ts
+alwaysApply: false
+---
+
+# Bookings API (task.md § contract)
+
+Network layer **separate from UI** and **replaceable** with a real backend (UI talks only to `lib/api/bookings-client.ts`).
+
+## Type
+
+```typescript
+type Booking = {
+  id: string;
+  date: string; // YYYY-MM-DD
+  start: string; // HH:mm
+  end: string; // HH:mm
+  title?: string;
+};
+```
+
+## Endpoints (exact paths from task)
+
+- `GET /api/bookings?date=YYYY-MM-DD`
+- `POST /api/bookings`
+- `PATCH /api/bookings/:id`
+- `DELETE /api/bookings/:id`
+
+## Server (task.md)
+
+- Validates **all business rules 1–7** via `lib/bookings/`
+- Returns **409** on scheduling **conflict** (overlap), e.g. `{ error: "CONFLICT", message: "..." }`
+- Other failures: 4xx/JSON `{ error, message }`; no stack traces to client
+
+## Implementation layers
+
+| Module                       | Role                                                                   |
+| ---------------------------- | ---------------------------------------------------------------------- |
+| `lib/bookings/store.ts`      | In-memory persistence (MSW mock store OK elsewhere); resets on restart |
+| Route Handlers               | HTTP ↔ validate ↔ store                                                |
+| `lib/api/bookings-client.ts` | Typed fetch; map **409** to `BookingApiError` (or equivalent)          |
+
+**Forbidden in UI:** direct `fetch('/api/bookings…')`.
