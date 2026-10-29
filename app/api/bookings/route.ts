@@ -1,10 +1,10 @@
+import { parseBookingInput } from "@/lib/bookings/payload";
 import {
   createBooking,
   isStoreValidationError,
   listByDate,
 } from "@/lib/bookings/store";
 import { isValidDateString } from "@/lib/bookings/time";
-import type { BookingInput } from "@/lib/bookings/types";
 import { NextResponse } from "next/server";
 
 function errorResponse(
@@ -29,7 +29,11 @@ export async function GET(request: Request): Promise<NextResponse> {
   const { searchParams } = new URL(request.url);
   const date = searchParams.get("date");
   if (!date) {
-    return errorResponse(400, "MISSING_DATE", "Query parameter date is required.");
+    return errorResponse(
+      400,
+      "MISSING_DATE",
+      "Query parameter date is required.",
+    );
   }
   if (!isValidDateString(date)) {
     return errorResponse(400, "INVALID_DATE", "Invalid date format.");
@@ -44,12 +48,12 @@ export async function POST(request: Request): Promise<NextResponse> {
   } catch {
     return errorResponse(400, "INVALID_JSON", "Request body must be JSON.");
   }
-  if (!body || typeof body !== "object") {
-    return errorResponse(400, "INVALID_BODY", "Invalid booking payload.");
+  const parsed = parseBookingInput(body);
+  if (!parsed.ok) {
+    return errorResponse(400, parsed.code, parsed.message);
   }
-  const input = body as BookingInput;
   try {
-    const booking = createBooking(input);
+    const booking = createBooking(parsed.input);
     return NextResponse.json(booking, { status: 201 });
   } catch (err) {
     if (isStoreValidationError(err)) {

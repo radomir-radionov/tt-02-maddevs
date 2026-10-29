@@ -6,6 +6,7 @@ import {
 } from "./constants";
 import { intervalsOverlap } from "./overlap";
 import {
+  isEndInPast,
   isPastDate,
   isStartInPast,
   isValidDateString,
@@ -83,20 +84,16 @@ export function validateBooking(
     };
   }
 
-  if (isStartInPast(input.date, startMinutes, now)) {
-    if (options.mode === "update" && options.excludeId) {
-      const current = existing.find((b) => b.id === options.excludeId);
-      const currentStart = current ? parseTime(current.start) : null;
-      if (currentStart === startMinutes) {
-        // Allow saving an in-progress booking without changing its start time.
-      } else {
-        return {
-          ok: false,
-          code: "PAST_TIME",
-          message: "Cannot book time in the past.",
-        };
-      }
-    } else {
+  if (options.mode !== "update") {
+    if (isStartInPast(input.date, startMinutes, now)) {
+      return {
+        ok: false,
+        code: "PAST_TIME",
+        message: "Cannot book time in the past.",
+      };
+    }
+
+    if (isEndInPast(input.date, endMinutes, now)) {
       return {
         ok: false,
         code: "PAST_TIME",

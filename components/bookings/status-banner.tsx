@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 
 type StatusBannerProps = {
@@ -18,34 +19,27 @@ export function StatusBanner({
 
   if (loadStatus === "error" && loadError) {
     items.push(
-      <div
-        key="load-error"
-        role="alert"
-        className="flex flex-wrap items-center gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-100"
-      >
-        <span>{loadError}</span>
-        <Button
-          type="button"
-          variant="ghost"
-          className="h-auto min-h-0 px-0 py-0 underline"
-          onClick={onRetry}
-        >
-          Retry
-        </Button>
-      </div>,
+      <Alert key="load-error" variant="destructive">
+        <AlertDescription className="flex flex-wrap items-center gap-2">
+          <span>{loadError}</span>
+          <Button
+            type="button"
+            variant="link"
+            className="h-auto p-0"
+            onClick={onRetry}
+          >
+            Retry
+          </Button>
+        </AlertDescription>
+      </Alert>,
     );
   }
 
   if (mutationError) {
     items.push(
-      <p
-        key="mutation-error"
-        role="alert"
-        aria-live="polite"
-        className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100"
-      >
-        {mutationError}
-      </p>,
+      <Alert key="mutation-error" variant="warning">
+        <AlertDescription>{mutationError}</AlertDescription>
+      </Alert>,
     );
   }
 

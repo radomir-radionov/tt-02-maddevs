@@ -42,6 +42,12 @@ export function todayDateString(now: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+/** Local midnight for a `YYYY-MM-DD` string (not UTC). */
+export function localDateFromDateString(value: string): Date {
+  const [y, m, d] = value.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
 /** Local calendar date offset from `now` (negative = past). */
 export function addDaysToDateString(now: Date, days: number): string {
   const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -61,17 +67,35 @@ export function isToday(date: string, now: Date): boolean {
   return date === todayDateString(now);
 }
 
-/** True when booking start is before now on today's date. */
-export function isStartInPast(
+/** True when a clock time is before the current minute on today's date. */
+export function isMinutesInPast(
   date: string,
-  startMinutes: number,
+  minutes: number,
   now: Date,
 ): boolean {
   if (!isToday(date, now)) {
     return false;
   }
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
-  return startMinutes < nowMinutes;
+  return minutes < nowMinutes;
+}
+
+/** True when booking start is before now on today's date. */
+export function isStartInPast(
+  date: string,
+  startMinutes: number,
+  now: Date,
+): boolean {
+  return isMinutesInPast(date, startMinutes, now);
+}
+
+/** True when booking end is before now on today's date. */
+export function isEndInPast(
+  date: string,
+  endMinutes: number,
+  now: Date,
+): boolean {
+  return isMinutesInPast(date, endMinutes, now);
 }
 
 export function generateSlotTimes(

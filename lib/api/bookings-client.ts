@@ -31,10 +31,7 @@ async function parseError(response: Response): Promise<BookingApiError> {
   );
 }
 
-async function request<T>(
-  path: string,
-  init?: RequestInit,
-): Promise<T> {
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
     ...init,
     headers: {
@@ -75,4 +72,58 @@ export async function updateBooking(
 
 export async function deleteBooking(id: string): Promise<void> {
   await request<void>(`/api/bookings/${id}`, { method: "DELETE" });
+}
+
+type BookingsStreamEvent =
+  | { type: "ready"; date: string }
+  | { type: "bookings-changed"; date: string };
+
+function parseStreamPayload(
+  eventType: string,
+  raw: string,
+): BookingsStreamEvent | null {
+  try {
+    const data = JSON.parse(raw) as { date?: string };
+    if (typeof data.date !== "string") {
+      return null;
+    }
+    if (eventType === "ready") {
+      return { type: "ready", date: data.date };
+    }
+    if (eventType === "bookings-changed") {
+      return { type: "bookings-changed", date: data.date };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/** Live updates for a date (SSE). Returns unsubscribe. */
+export function subscribeBookingsStream(
+  date: string,
+  onEvent: (event: BookingsStreamEvent) => void,
+): () => void {
+  const params = new URLSearchParams({ date });
+  const source = new EventSource(`/api/bookings/stream?${params.toString()}`);
+
+  source.addEventListener("ready", (event) => {
+    const messageEvent = event as MessageEvent<string>;
+    const parsed = parseStreamPayload("ready", messageEvent.data);
+    if (parsed) {
+      onEvent(parsed);
+    }
+  });
+
+  source.addEventListener("bookings-changed", (event) => {
+    const messageEvent = event as MessageEvent<string>;
+    const parsed = parseStreamPayload("bookings-changed", messageEvent.data);
+    if (parsed) {
+      onEvent(parsed);
+    }
+  });
+
+  return () => {
+    source.close();
+  };
 }

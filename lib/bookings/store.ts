@@ -1,5 +1,7 @@
+import { notifyBookingsChanged } from "./events";
 import { validateBooking } from "./validate";
-import { addDaysToDateString, todayDateString } from "./time";
+import { getBookingNow } from "@/lib/bookings/clock";
+import { addDaysToDateString, todayDateString } from "@/lib/bookings/time";
 import type { Booking, BookingInput, BookingPatch } from "./types";
 
 type BookingsGlobal = typeof globalThis & {
@@ -19,7 +21,7 @@ function seedDemoBookings(bookings: Booking[]): void {
   if (bookings.length > 0) {
     return;
   }
-  const now = new Date();
+  const now = getBookingNow();
   const today = todayDateString(now);
   const yesterday = addDaysToDateString(now, -1);
   const twoDaysAgo = addDaysToDateString(now, -2);
@@ -84,7 +86,10 @@ export function findById(id: string): Booking | undefined {
 
 export function createBooking(input: BookingInput): Booking {
   const bookings = bookingsStore();
-  const result = validateBooking(input, bookings, { mode: "create" });
+  const result = validateBooking(input, bookings, {
+    mode: "create",
+    now: getBookingNow(),
+  });
   if (!result.ok) {
     throw result;
   }
@@ -96,6 +101,7 @@ export function createBooking(input: BookingInput): Booking {
     title: input.title?.trim() || undefined,
   };
   bookings.push(booking);
+  notifyBookingsChanged(booking.date);
   return booking;
 }
 
@@ -118,6 +124,7 @@ export function updateBooking(id: string, patch: BookingPatch): Booking {
   const result = validateBooking(next, bookings, {
     mode: "update",
     excludeId: id,
+    now: getBookingNow(),
   });
   if (!result.ok) {
     throw result;
@@ -131,6 +138,10 @@ export function updateBooking(id: string, patch: BookingPatch): Booking {
   };
   const index = bookings.findIndex((b) => b.id === id);
   bookings[index] = updated;
+  notifyBookingsChanged(current.date);
+  if (updated.date !== current.date) {
+    notifyBookingsChanged(updated.date);
+  }
   return updated;
 }
 
@@ -146,6 +157,7 @@ export function removeBooking(id: string): void {
   }
   const index = bookings.findIndex((b) => b.id === id);
   bookings.splice(index, 1);
+  notifyBookingsChanged(current.date);
 }
 
 export type StoreValidationError = { ok: false; code: string; message: string };

@@ -2,12 +2,17 @@
 
 import { useEffect, useState } from "react";
 
-/** Current time; null until after mount (avoids prerender `new Date()` issues). */
-export function useClientNow(): Date | null {
-  const [now, setNow] = useState<Date | null>(null);
+const TICK_MS = 60_000;
+
+/** Browser clock for booking rules in the UI (updates every minute after mount). */
+export function useClientNow(seedIso: string): Date {
+  const [now, setNow] = useState(() => new Date(seedIso));
+
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- client-only clock after mount
     setNow(new Date());
+    const id = window.setInterval(() => setNow(new Date()), TICK_MS);
+    return () => window.clearInterval(id);
   }, []);
+
   return now;
 }

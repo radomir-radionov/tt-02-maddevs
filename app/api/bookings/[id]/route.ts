@@ -1,9 +1,9 @@
+import { parseBookingPatch } from "@/lib/bookings/payload";
 import {
   isStoreValidationError,
   removeBooking,
   updateBooking,
 } from "@/lib/bookings/store";
-import type { BookingPatch } from "@/lib/bookings/types";
 import { NextResponse } from "next/server";
 
 function errorResponse(
@@ -37,11 +37,12 @@ export async function PATCH(
   } catch {
     return errorResponse(400, "INVALID_JSON", "Request body must be JSON.");
   }
-  if (!body || typeof body !== "object") {
-    return errorResponse(400, "INVALID_BODY", "Invalid patch payload.");
+  const parsed = parseBookingPatch(body);
+  if (!parsed.ok) {
+    return errorResponse(400, parsed.code, parsed.message);
   }
   try {
-    const booking = updateBooking(id, body as BookingPatch);
+    const booking = updateBooking(id, parsed.patch);
     return NextResponse.json(booking);
   } catch (err) {
     if (isStoreValidationError(err)) {

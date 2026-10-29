@@ -1,10 +1,20 @@
 import {
   MIN_DURATION_MINUTES,
+  WORK_DAY_END,
   WORK_DAY_END_MINUTES,
+  WORK_DAY_START,
   WORK_DAY_START_MINUTES,
   SLOT_STEP_MINUTES,
 } from "./constants";
-import { generateSlotTimes, isStartInPast, isToday, parseTime } from "./time";
+import {
+  formatMinutes,
+  generateSlotTimes,
+  isPastDate,
+  isStartInPast,
+  isToday,
+  isValidDateString,
+  parseTime,
+} from "./time";
 import { validateBooking } from "./validate";
 import type { Booking } from "./types";
 
@@ -24,6 +34,50 @@ export function getAllEndTimeOptions(): string[] {
     WORK_DAY_END_MINUTES,
     SLOT_STEP_MINUTES,
   );
+}
+
+export type TimeInputBounds = {
+  min: string;
+  max: string;
+};
+
+const LAST_START_MINUTES = WORK_DAY_END_MINUTES - MIN_DURATION_MINUTES;
+
+/** True when a new booking can still start on this date. */
+export function canCreateOnDate(date: string, now: Date): boolean {
+  if (!isValidDateString(date) || isPastDate(date, now)) {
+    return false;
+  }
+  if (!isToday(date, now)) {
+    return true;
+  }
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  return nowMinutes <= LAST_START_MINUTES;
+}
+
+/** Native time input limits: work day, and no past start on today. */
+export function getStartTimeBounds(date: string, now: Date): TimeInputBounds {
+  let min = WORK_DAY_START;
+  if (isToday(date, now)) {
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    if (nowMinutes > WORK_DAY_START_MINUTES) {
+      min = formatMinutes(Math.min(nowMinutes, LAST_START_MINUTES));
+    }
+  }
+  return { min, max: WORK_DAY_END };
+}
+
+/** End must stay inside the work day and cannot be in the past today. */
+export function getEndTimeBounds(date: string, now: Date): TimeInputBounds {
+  let minMinutes = WORK_DAY_START_MINUTES;
+  if (isToday(date, now)) {
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    minMinutes = Math.max(minMinutes, nowMinutes);
+  }
+  return {
+    min: formatMinutes(Math.min(minMinutes, WORK_DAY_END_MINUTES)),
+    max: WORK_DAY_END,
+  };
 }
 
 export type SlotPickerContext = {
@@ -85,7 +139,10 @@ export function defaultBookingTimes(
     mode: "create",
     existing,
   };
-  const start = getAvailableStartOptions(ctx)[0] ?? "09:00";
-  const end = getAvailableEndOptions(start, ctx)[0] ?? "09:30";
+  const start = getAvailableStartOptions(ctx)[0];
+  if (!start) {
+    return { start: "", end: "" };
+  }
+  const end = getAvailableEndOptions(start, ctx)[0] ?? "";
   return { start, end };
 }

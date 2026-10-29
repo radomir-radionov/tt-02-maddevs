@@ -1,141 +1,158 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import {
+  useIsMutating,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import {
   BookingApiError,
   createBooking as apiCreate,
   deleteBooking as apiDelete,
   listBookings,
+  subscribeBookingsStream,
   updateBooking as apiUpdate,
 } from "@/lib/api/bookings-client";
+import { bookingsQueryKeys } from "@/lib/bookings/query-keys";
 import type { Booking, BookingInput, BookingPatch } from "@/lib/bookings/types";
 
 export type LoadStatus = "idle" | "loading" | "error";
 
-export function useBookings(date: string) {
-  const cacheRef = useRef(new Map<string, Booking[]>());
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [loadStatus, setLoadStatus] = useState<LoadStatus>("idle");
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+export type BookingsInitialData = {
+  date: string;
+  bookings: readonly Booking[];
+};
+
+function loadErrorMessage(error: unknown): string {
+  if (error instanceof BookingApiError) {
+    return error.message;
+  }
+  return "Failed to load bookings.";
+}
+
+function mutationErrorMessage(error: unknown): string {
+  if (error instanceof BookingApiError) {
+    return error.message;
+  }
+  return "Something went wrong. Please try again.";
+}
+
+export function useBookings(
+  date: string,
+  options?: { initial?: BookingsInitialData },
+) {
+  const queryClient = useQueryClient();
   const [mutationError, setMutationError] = useState<string | null>(null);
 
-  function applyBookings(targetDate: string, data: Booking[]) {
-    cacheRef.current.set(targetDate, data);
-    setBookings(data);
-    setLoadStatus("idle");
-    setLoadError(null);
-  }
+  const initial = options?.initial;
+  const hasInitialForDate =
+    initial !== undefined && initial.date === date && date !== "";
 
-  async function refetch(options?: { showLoading?: boolean }) {
-    if (!date) {
-      return;
-    }
-    const cached = cacheRef.current.get(date);
-    if (cached) {
-      setBookings(cached);
-    }
+  const query = useQuery({
+    queryKey: bookingsQueryKeys.byDate(date),
+    queryFn: () => listBookings(date),
+    enabled: date !== "",
+    initialData: hasInitialForDate ? [...initial.bookings] : undefined,
+  });
 
-    const showLoading = options?.showLoading ?? !cacheRef.current.has(date);
-    if (showLoading) {
-      setLoadStatus("loading");
-    }
-    setLoadError(null);
+  const mutationKey = bookingsQueryKeys.mutations();
 
-    try {
-      const data = await listBookings(date);
-      applyBookings(date, data);
-    } catch (err) {
-      setLoadStatus("error");
-      setLoadError(
-        err instanceof BookingApiError
-          ? err.message
-          : "Failed to load bookings.",
-      );
+  const handleMutationError = async (error: unknown) => {
+    setMutationError(mutationErrorMessage(error));
+    if (
+      error instanceof BookingApiError &&
+      (error.status === 409 || error.status === 404)
+    ) {
+      await queryClient.invalidateQueries({
+        queryKey: bookingsQueryKeys.byDate(date),
+      });
     }
-  }
+  };
+
+  const createMutation = useMutation({
+    mutationKey,
+    mutationFn: (input: BookingInput) => apiCreate(input),
+    onMutate: () => {
+      setMutationError(null);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: bookingsQueryKeys.byDate(date),
+      });
+    },
+    onError: handleMutationError,
+  });
+
+  const updateMutation = useMutation({
+    mutationKey,
+    mutationFn: ({ id, patch }: { id: string; patch: BookingPatch }) =>
+      apiUpdate(id, patch),
+    onMutate: () => {
+      setMutationError(null);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: bookingsQueryKeys.byDate(date),
+      });
+    },
+    onError: handleMutationError,
+  });
+
+  const deleteMutation = useMutation({
+    mutationKey,
+    mutationFn: (id: string) => apiDelete(id),
+    onMutate: () => {
+      setMutationError(null);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: bookingsQueryKeys.byDate(date),
+      });
+    },
+    onError: handleMutationError,
+  });
+
+  const mutatingCount = useIsMutating({ mutationKey });
+  const submitting = mutatingCount > 0;
 
   useEffect(() => {
     if (!date) {
       return;
     }
-    const cached = cacheRef.current.get(date);
-    if (cached) {
-      setBookings(cached);
-      setLoadStatus("idle");
-    } else {
-      setBookings([]);
-    }
 
-    let cancelled = false;
-    const showLoading = !cacheRef.current.has(date);
-    if (showLoading) {
-      setLoadStatus("loading");
-    }
-    setLoadError(null);
-
-    void (async () => {
-      try {
-        const data = await listBookings(date);
-        if (cancelled) {
-          return;
-        }
-        applyBookings(date, data);
-      } catch (err) {
-        if (cancelled) {
-          return;
-        }
-        setLoadStatus("error");
-        setLoadError(
-          err instanceof BookingApiError
-            ? err.message
-            : "Failed to load bookings.",
-        );
+    return subscribeBookingsStream(date, (event) => {
+      if (event.type !== "bookings-changed" || event.date !== date) {
+        return;
       }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [date]);
-
-  async function runMutation(action: () => Promise<void>) {
-    setSubmitting(true);
-    setMutationError(null);
-    try {
-      await action();
-      await refetch({ showLoading: false });
-    } catch (err) {
-      if (err instanceof BookingApiError) {
-        setMutationError(err.message);
-        if (err.status === 409 || err.status === 404) {
-          await refetch({ showLoading: false });
-        }
-      } else {
-        setMutationError("Something went wrong. Please try again.");
+      if (mutatingCount > 0) {
+        return;
       }
-      throw err;
-    } finally {
-      setSubmitting(false);
-    }
-  }
+      void queryClient.invalidateQueries({
+        queryKey: bookingsQueryKeys.byDate(date),
+      });
+    });
+  }, [date, mutatingCount, queryClient]);
+
+  const loadStatus: LoadStatus = query.isError
+    ? "error"
+    : query.isLoading
+      ? "loading"
+      : "idle";
+
+  const loadError = query.isError ? loadErrorMessage(query.error) : null;
 
   async function createBooking(input: BookingInput) {
-    return runMutation(async () => {
-      await apiCreate(input);
-    });
+    await createMutation.mutateAsync(input);
   }
 
   async function updateBooking(id: string, patch: BookingPatch) {
-    return runMutation(async () => {
-      await apiUpdate(id, patch);
-    });
+    await updateMutation.mutateAsync({ id, patch });
   }
 
   async function deleteBooking(id: string) {
-    return runMutation(async () => {
-      await apiDelete(id);
-    });
+    await deleteMutation.mutateAsync(id);
   }
 
   function clearMutationError() {
@@ -143,12 +160,12 @@ export function useBookings(date: string) {
   }
 
   return {
-    bookings,
+    bookings: query.data ?? [],
     loadStatus,
     loadError,
     submitting,
     mutationError,
-    refetch: () => refetch({ showLoading: false }),
+    refetch: () => void query.refetch(),
     createBooking,
     updateBooking,
     deleteBooking,

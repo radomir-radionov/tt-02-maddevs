@@ -33,7 +33,6 @@ export function BookingToolbar({
         <Button
           type="button"
           variant="outline"
-          size="sm"
           onClick={onNew}
           disabled={submitting}
         >
@@ -45,7 +44,6 @@ export function BookingToolbar({
           <Button
             type="button"
             variant="outline"
-            size="sm"
             onClick={onEdit}
             disabled={submitting}
             aria-label="Edit selected booking"
@@ -54,8 +52,7 @@ export function BookingToolbar({
           </Button>
           <Button
             type="button"
-            variant="destructiveOutline"
-            size="sm"
+            variant="destructive"
             onClick={onDelete}
             disabled={submitting}
             aria-label="Delete selected booking"

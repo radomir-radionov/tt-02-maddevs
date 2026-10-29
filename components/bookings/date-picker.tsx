@@ -1,17 +1,21 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import {
-  BookingCalendar,
-  viewFromDate,
-} from "@/components/bookings/booking-calendar";
+import { useState } from "react";
+import { CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { fieldControlClasses } from "@/components/ui/input";
+import { Calendar } from "@/components/ui/calendar";
+import { Field, FieldLabel } from "@/components/ui/field";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { formatDisplayDate } from "@/lib/bookings/calendar";
 import {
   isPastDate,
   isValidDateString,
+  localDateFromDateString,
   todayDateString,
 } from "@/lib/bookings/time";
 
@@ -22,112 +26,72 @@ type DatePickerProps = {
   now: Date;
 };
 
-function CalendarIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.75}
-      className="h-4 w-4 shrink-0 text-zinc-500"
-      aria-hidden
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M8 7V3m8 4V3M4 11h16M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-      />
-    </svg>
-  );
-}
-
 export function DatePicker({ id, value, onCommit, now }: DatePickerProps) {
-  const rootRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
-  const initialView = viewFromDate(value, now);
-  const [viewYear, setViewYear] = useState(initialView.year);
-  const [viewMonthIndex, setViewMonthIndex] = useState(initialView.monthIndex);
 
   const committedPast = isValidDateString(value) && isPastDate(value, now);
+  const selectedDate =
+    value && isValidDateString(value)
+      ? localDateFromDateString(value)
+      : undefined;
 
-  useEffect(() => {
-    const next = viewFromDate(value, now);
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync calendar month to selected date
-    setViewYear(next.year);
-    setViewMonthIndex(next.monthIndex);
-  }, [value, now]);
-
-  useEffect(() => {
-    if (!open) {
+  const handleSelect = (date: Date | undefined) => {
+    if (!date) {
       return;
     }
-    const onPointerDown = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", onPointerDown);
-    return () => document.removeEventListener("mousedown", onPointerDown);
-  }, [open]);
-
-  const handleSelect = (date: string) => {
-    onCommit(date);
+    onCommit(todayDateString(date));
     setOpen(false);
   };
 
-  const fieldClass = fieldControlClasses(committedPast);
-
   return (
-    <div
-      ref={rootRef}
-      className="relative w-[11rem] shrink-0"
+    <Field
+      className="w-[11rem] shrink-0"
       data-past-date={committedPast ? "true" : undefined}
     >
-      <label
-        htmlFor={id}
-        className="mb-1 block text-sm font-medium leading-none"
-      >
-        Date
-      </label>
-
-      <Button
-        id={id}
-        type="button"
-        variant="unstyled"
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        onClick={() => setOpen((prev) => !prev)}
-        className={cn(
-          "w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm",
-          fieldClass,
-        )}
-      >
-        <span>{value ? formatDisplayDate(value) : "Pick a date"}</span>
-        <CalendarIcon />
-      </Button>
-
-      {open ? (
-        <div className="absolute left-0 top-full z-50 mt-1">
-          <BookingCalendar
-            selected={value}
-            viewYear={viewYear}
-            viewMonthIndex={viewMonthIndex}
-            now={now}
+      <FieldLabel htmlFor={id}>Date</FieldLabel>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger
+          render={
+            <Button
+              id={id}
+              type="button"
+              variant="outline"
+              className={cn(
+                "w-full justify-between font-normal tabular-nums",
+                committedPast && "text-muted-foreground",
+              )}
+            />
+          }
+        >
+          <span>{value ? formatDisplayDate(value) : "Pick a date"}</span>
+          <CalendarIcon data-icon="inline-end" />
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="single"
+            selected={selectedDate}
             onSelect={handleSelect}
-            onViewChange={(year, monthIndex) => {
-              setViewYear(year);
-              setViewMonthIndex(monthIndex);
+            modifiers={{
+              past: (date) => isPastDate(todayDateString(date), now),
             }}
-            onClear={() => {
-              setOpen(false);
-            }}
-            onToday={() => {
-              handleSelect(todayDateString(now));
+            modifiersClassNames={{
+              past: "text-muted-foreground",
             }}
           />
-        </div>
-      ) : null}
-    </div>
+          <div className="flex justify-end border-t p-2">
+            <Button
+              type="button"
+              variant="link"
+              size="sm"
+              onClick={() => {
+                handleSelect(localDateFromDateString(todayDateString(now)));
+              }}
+            >
+              Today
+            </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
+    </Field>
   );
 }
