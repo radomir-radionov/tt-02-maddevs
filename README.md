@@ -75,8 +75,10 @@ npm start
 ### Что сдать (task.md)
 
 **+** README: как запустить, статус по пунктам, время (разделы ниже);  
-**-** ссылка на deployed demo (URL — после деплоя);  
+**+** ссылка на deployed demo (см. ниже);  
 **-** указано фактическое время в разделе «Сколько времени заняло» (заполнить перед сдачей).
+
+**Репозиторий:** https://github.com/radomir-radionov/tt-02-maddevs
 
 ## Сколько времени заняло
 
@@ -84,15 +86,14 @@ _(указать перед сдачей, ориентир по заданию: 
 
 ## Deploy (Vercel)
 
-1. Push репозитория на GitHub.
-2. Import проекта в [Vercel](https://vercel.com).
-3. Deploy (настройки Next.js по умолчанию).
+Проект связан с GitHub; push в `main` автоматически деплоится на Vercel.
 
-**Deployed demo URL:** _(добавить после деплоя)_
+- **Production:** https://tt-02-maddevs.vercel.app
+- **Dashboard:** https://vercel.com/radomirs-projects/tt-02-maddevs
 
 ## Чеклист сдачи
 
-- [ ] Ссылка на репозиторий
-- [ ] README: запуск, сделано / не сделано, время
-- [ ] Deployed demo
+- [x] Ссылка на репозиторий
+- [x] README: запуск, сделано / не сделано, время
+- [x] Deployed demo
 - [ ] Чат-переписка с AI
