@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { useId, useState } from "react";
 import {
   getAvailableEndOptions,
   getAvailableStartOptions,
@@ -8,6 +8,8 @@ import {
   type SlotPickerContext,
 } from "@/lib/bookings/slot-options";
 import { TimeSelect } from "@/components/bookings/time-select";
+import { Button } from "@/components/ui/button";
+import { fieldControlClasses, Input } from "@/components/ui/input";
 import { isPastDate } from "@/lib/bookings/time";
 import { validateBooking } from "@/lib/bookings/validate";
 import type { Booking, BookingInput } from "@/lib/bookings/types";
@@ -54,63 +56,46 @@ export function BookingForm({
   const [title, setTitle] = useState(initialValues.title);
   const [clientHint, setClientHint] = useState<string | null>(null);
 
-  const slotCtx = useMemo<SlotPickerContext>(
-    () => ({
-      date,
-      now,
-      mode,
-      existing: existingBookings,
-      excludeId: editingId ?? undefined,
-    }),
-    [date, editingId, existingBookings, mode, now],
-  );
+  const slotCtx: SlotPickerContext = {
+    date,
+    now,
+    mode,
+    existing: existingBookings,
+    excludeId: editingId ?? undefined,
+  };
 
-  const startOptions = useMemo(
-    () => mergeTimeOption(getAvailableStartOptions(slotCtx), start),
-    [slotCtx, start],
+  const startOptions = mergeTimeOption(
+    getAvailableStartOptions(slotCtx),
+    start,
   );
-  const endOptions = useMemo(
-    () => mergeTimeOption(getAvailableEndOptions(start, slotCtx), end),
-    [end, slotCtx, start],
+  const endOptions = mergeTimeOption(
+    getAvailableEndOptions(start, slotCtx),
+    end,
   );
 
   const createDisabled = mode === "create" && isPastDate(date, now);
   const fieldsDisabled = submitting || createDisabled;
+  const fieldClass = fieldControlClasses(fieldsDisabled);
 
-  const disabledFieldClass = fieldsDisabled
-    ? "cursor-not-allowed border-zinc-200 bg-zinc-100 text-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-500"
-    : "border-zinc-300 bg-white dark:border-zinc-600 dark:bg-zinc-900";
-
-  const fieldClass = `rounded-md border text-sm ${disabledFieldClass}`;
-
-  const validateFields = useCallback(
-    (startValue: string, endValue: string): boolean => {
-      const payload: BookingInput = {
-        date,
-        start: startValue,
-        end: endValue,
-        title: title.trim() || undefined,
-      };
-      const result = validateBooking(payload, existingBookings, {
-        mode: mode === "edit" ? "update" : "create",
-        excludeId: editingId ?? undefined,
-        now,
-      });
-      if (!result.ok) {
-        setClientHint(result.message);
-        return false;
-      }
-      setClientHint(null);
-      return true;
-    },
-    [date, editingId, existingBookings, mode, now, title],
-  );
-
-  useEffect(() => {
-    if (serverError) {
-      setClientHint(null);
+  function validateFields(startValue: string, endValue: string): boolean {
+    const payload: BookingInput = {
+      date,
+      start: startValue,
+      end: endValue,
+      title: title.trim() || undefined,
+    };
+    const result = validateBooking(payload, existingBookings, {
+      mode: mode === "edit" ? "update" : "create",
+      excludeId: editingId ?? undefined,
+      now,
+    });
+    if (!result.ok) {
+      setClientHint(result.message);
+      return false;
     }
-  }, [serverError]);
+    setClientHint(null);
+    return true;
+  }
 
   const handleStartChange = (value: string) => {
     onFieldChange?.();
@@ -176,16 +161,15 @@ export function BookingForm({
         <label htmlFor={titleId} className="text-sm font-medium">
           Title (optional)
         </label>
-        <input
+        <Input
           id={titleId}
-          type="text"
           value={title}
           onChange={(e) => {
             onFieldChange?.();
             setTitle(e.target.value);
           }}
           disabled={fieldsDisabled}
-          className={`booking-field-text w-full ${fieldClass}`}
+          className="max-w-full"
           placeholder="Meeting title"
         />
       </div>
@@ -199,26 +183,22 @@ export function BookingForm({
         </p>
       ) : null}
       <div className="flex flex-wrap gap-2">
-        <button
-          type="submit"
-          disabled={submitting || createDisabled}
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-zinc-300 disabled:text-zinc-500 dark:disabled:bg-zinc-700"
-        >
+        <Button type="submit" disabled={submitting || createDisabled}>
           {submitting
             ? "Saving…"
             : mode === "create"
               ? "Create"
               : "Save changes"}
-        </button>
+        </Button>
         {onCancelEdit ? (
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={onCancelEdit}
             disabled={submitting}
-            className="rounded-md border border-zinc-300 px-4 py-2 text-sm dark:border-zinc-600"
           >
             Cancel
-          </button>
+          </Button>
         ) : null}
       </div>
     </form>

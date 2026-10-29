@@ -1,11 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { BookingDialog } from "@/components/bookings/booking-dialog";
 import {
   BookingForm,
   type BookingFormValues,
 } from "@/components/bookings/booking-form";
+import { BookingList } from "@/components/bookings/booking-list";
 import { BookingTimeline } from "@/components/bookings/booking-timeline";
 import { BookingToolbar } from "@/components/bookings/booking-toolbar";
 import { DatePicker } from "@/components/bookings/date-picker";
@@ -64,47 +66,38 @@ export function BookingPage() {
     clearMutationError,
   } = useBookings(committedDate);
 
-  const selectedBooking = useMemo(
-    () => bookings.find((b) => b.id === selectedId) ?? null,
-    [bookings, selectedId],
-  );
+  const selectedBooking = bookings.find((b) => b.id === selectedId) ?? null;
 
   const createBlocked =
     now !== null && committedDate !== "" && isPastDate(committedDate, now);
 
-  const handleDateCommit = useCallback(
-    (next: string) => {
-      setCommittedDate(next);
-      setSelectedId(null);
-      setDialogOpen(false);
-      setDeleteConfirmOpen(false);
-      setFormMode("create");
-      if (now) {
-        setFormValues(defaultFormValues(next, now, bookings));
-      }
-      clearMutationError();
-    },
-    [bookings, clearMutationError, now],
-  );
+  function handleDateCommit(next: string) {
+    setCommittedDate(next);
+    setSelectedId(null);
+    setDialogOpen(false);
+    setDeleteConfirmOpen(false);
+    setFormMode("create");
+    if (now) {
+      setFormValues(defaultFormValues(next, now, bookings));
+    }
+    clearMutationError();
+  }
 
-  const handleSelect = useCallback(
-    (id: string) => {
-      setSelectedId(id);
-      setDeleteConfirmOpen(false);
-      clearMutationError();
-    },
-    [clearMutationError],
-  );
+  function handleSelect(id: string) {
+    setSelectedId(id);
+    setDeleteConfirmOpen(false);
+    clearMutationError();
+  }
 
-  const handleClearSelection = useCallback(() => {
+  function handleClearSelection() {
     if (dialogOpen || deleteConfirmOpen) {
       return;
     }
     setSelectedId(null);
     setDeleteConfirmOpen(false);
-  }, [deleteConfirmOpen, dialogOpen]);
+  }
 
-  const openCreateDialog = useCallback(() => {
+  function openCreateDialog() {
     if (!now || createBlocked) {
       return;
     }
@@ -113,9 +106,9 @@ export function BookingPage() {
     setFormValues(defaultFormValues(committedDate, now, bookings));
     clearMutationError();
     setDialogOpen(true);
-  }, [bookings, clearMutationError, committedDate, createBlocked, now]);
+  }
 
-  const openEditDialog = useCallback(() => {
+  function openEditDialog() {
     if (!selectedBooking || !now) {
       return;
     }
@@ -127,70 +120,58 @@ export function BookingPage() {
     });
     clearMutationError();
     setDialogOpen(true);
-  }, [clearMutationError, now, selectedBooking]);
+  }
 
-  const closeDialog = useCallback(() => {
+  function closeDialog() {
     setDialogOpen(false);
     clearMutationError();
-  }, [clearMutationError]);
+  }
 
-  const handleSubmit = useCallback(
-    async (values: BookingFormValues) => {
-      setFormValues(values);
-      try {
-        if (formMode === "create") {
-          await createBooking({
-            date: committedDate,
-            start: values.start,
-            end: values.end,
-            title: values.title.trim() || undefined,
-          });
-          setDialogOpen(false);
-          clearMutationError();
-          if (now) {
-            setFormValues(defaultFormValues(committedDate, now, bookings));
-          }
-        } else if (selectedId) {
-          await updateBooking(selectedId, {
-            start: values.start,
-            end: values.end,
-            title: values.title.trim() || undefined,
-          });
-          setDialogOpen(false);
-          clearMutationError();
+  async function handleSubmit(values: BookingFormValues) {
+    setFormValues(values);
+    try {
+      if (formMode === "create") {
+        await createBooking({
+          date: committedDate,
+          start: values.start,
+          end: values.end,
+          title: values.title.trim() || undefined,
+        });
+        setDialogOpen(false);
+        clearMutationError();
+        if (now) {
+          setFormValues(defaultFormValues(committedDate, now, bookings));
         }
-      } catch {
-        // mutationError + refetch in hook; dialog stays open; formValues synced above
+      } else if (selectedId) {
+        await updateBooking(selectedId, {
+          start: values.start,
+          end: values.end,
+          title: values.title.trim() || undefined,
+        });
+        setDialogOpen(false);
+        clearMutationError();
       }
-    },
-    [
-      bookings,
-      clearMutationError,
-      committedDate,
-      createBooking,
-      formMode,
-      now,
-      selectedId,
-      updateBooking,
-    ],
-  );
+    } catch {
+      // mutationError + refetch in hook; dialog stays open; formValues synced above
+    }
+  }
 
-  const openDeleteConfirm = useCallback(() => {
+  function openDeleteConfirm() {
     if (!selectedId) {
       return;
     }
     clearMutationError();
     setDeleteConfirmOpen(true);
-  }, [clearMutationError, selectedId]);
+  }
 
-  const closeDeleteConfirm = useCallback(() => {
+  function closeDeleteConfirm() {
     if (submitting) {
       return;
     }
     setDeleteConfirmOpen(false);
-  }, [submitting]);
+  }
 
-  const handleDeleteConfirm = useCallback(async () => {
+  async function handleDeleteConfirm() {
     if (!selectedId || !now || !selectedBooking) {
       return;
     }
@@ -203,17 +184,8 @@ export function BookingPage() {
       setFormValues(defaultFormValues(committedDate, now, bookings));
     } catch {
       setDeleteConfirmOpen(false);
-      setSelectedId(null);
     }
-  }, [
-    bookings,
-    clearMutationError,
-    committedDate,
-    deleteBooking,
-    now,
-    selectedBooking,
-    selectedId,
-  ]);
+  }
 
   if (!now) {
     return (
@@ -256,7 +228,7 @@ export function BookingPage() {
       <StatusBanner
         loadStatus={loadStatus}
         loadError={loadError}
-        mutationError={mutationError}
+        mutationError={dialogOpen ? null : mutationError}
         onRetry={() => void refetch()}
       />
 
@@ -272,6 +244,15 @@ export function BookingPage() {
           className={
             dialogOpen || deleteConfirmOpen ? "pointer-events-none" : undefined
           }
+        />
+      ) : null}
+
+      {committedDate ? (
+        <BookingList
+          bookings={bookings}
+          selectedId={selectedId}
+          isLoading={loadStatus === "loading"}
+          onSelect={handleSelect}
         />
       ) : null}
 
@@ -314,22 +295,22 @@ export function BookingPage() {
             </p>
           ) : null}
           <div className="flex flex-wrap gap-2">
-            <button
+            <Button
               type="button"
+              variant="destructive"
               onClick={() => void handleDeleteConfirm()}
               disabled={submitting}
-              className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-zinc-300 disabled:text-zinc-500 dark:disabled:bg-zinc-700"
             >
               {submitting ? "Deleting…" : "Delete"}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="outline"
               onClick={closeDeleteConfirm}
               disabled={submitting}
-              className="rounded-md border border-zinc-300 px-4 py-2 text-sm dark:border-zinc-600"
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
       </BookingDialog>

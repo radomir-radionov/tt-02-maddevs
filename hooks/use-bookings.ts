@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   BookingApiError,
   createBooking as apiCreate,
@@ -20,43 +20,40 @@ export function useBookings(date: string) {
   const [submitting, setSubmitting] = useState(false);
   const [mutationError, setMutationError] = useState<string | null>(null);
 
-  const applyBookings = useCallback((targetDate: string, data: Booking[]) => {
+  function applyBookings(targetDate: string, data: Booking[]) {
     cacheRef.current.set(targetDate, data);
     setBookings(data);
     setLoadStatus("idle");
     setLoadError(null);
-  }, []);
+  }
 
-  const refetch = useCallback(
-    async (options?: { showLoading?: boolean }) => {
-      if (!date) {
-        return;
-      }
-      const cached = cacheRef.current.get(date);
-      if (cached) {
-        setBookings(cached);
-      }
+  async function refetch(options?: { showLoading?: boolean }) {
+    if (!date) {
+      return;
+    }
+    const cached = cacheRef.current.get(date);
+    if (cached) {
+      setBookings(cached);
+    }
 
-      const showLoading = options?.showLoading ?? !cacheRef.current.has(date);
-      if (showLoading) {
-        setLoadStatus("loading");
-      }
-      setLoadError(null);
+    const showLoading = options?.showLoading ?? !cacheRef.current.has(date);
+    if (showLoading) {
+      setLoadStatus("loading");
+    }
+    setLoadError(null);
 
-      try {
-        const data = await listBookings(date);
-        applyBookings(date, data);
-      } catch (err) {
-        setLoadStatus("error");
-        setLoadError(
-          err instanceof BookingApiError
-            ? err.message
-            : "Failed to load bookings.",
-        );
-      }
-    },
-    [applyBookings, date],
-  );
+    try {
+      const data = await listBookings(date);
+      applyBookings(date, data);
+    } catch (err) {
+      setLoadStatus("error");
+      setLoadError(
+        err instanceof BookingApiError
+          ? err.message
+          : "Failed to load bookings.",
+      );
+    }
+  }
 
   useEffect(() => {
     if (!date) {
@@ -69,61 +66,81 @@ export function useBookings(date: string) {
     } else {
       setBookings([]);
     }
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- load bookings for active date
-    void refetch({ showLoading: !cached });
-  }, [date, refetch]);
 
-  const runMutation = useCallback(
-    async (action: () => Promise<void>) => {
-      setSubmitting(true);
-      setMutationError(null);
+    let cancelled = false;
+    const showLoading = !cacheRef.current.has(date);
+    if (showLoading) {
+      setLoadStatus("loading");
+    }
+    setLoadError(null);
+
+    void (async () => {
       try {
-        await action();
-        await refetch({ showLoading: false });
-      } catch (err) {
-        if (err instanceof BookingApiError) {
-          setMutationError(err.message);
-          if (err.status === 409 || err.status === 404) {
-            await refetch({ showLoading: false });
-          }
-        } else {
-          setMutationError("Something went wrong. Please try again.");
+        const data = await listBookings(date);
+        if (cancelled) {
+          return;
         }
-        throw err;
-      } finally {
-        setSubmitting(false);
+        applyBookings(date, data);
+      } catch (err) {
+        if (cancelled) {
+          return;
+        }
+        setLoadStatus("error");
+        setLoadError(
+          err instanceof BookingApiError
+            ? err.message
+            : "Failed to load bookings.",
+        );
       }
-    },
-    [refetch],
-  );
+    })();
 
-  const createBooking = useCallback(
-    (input: BookingInput) =>
-      runMutation(async () => {
-        await apiCreate(input);
-      }),
-    [runMutation],
-  );
+    return () => {
+      cancelled = true;
+    };
+  }, [date]);
 
-  const updateBooking = useCallback(
-    (id: string, patch: BookingPatch) =>
-      runMutation(async () => {
-        await apiUpdate(id, patch);
-      }),
-    [runMutation],
-  );
-
-  const deleteBooking = useCallback(
-    (id: string) =>
-      runMutation(async () => {
-        await apiDelete(id);
-      }),
-    [runMutation],
-  );
-
-  const clearMutationError = useCallback(() => {
+  async function runMutation(action: () => Promise<void>) {
+    setSubmitting(true);
     setMutationError(null);
-  }, []);
+    try {
+      await action();
+      await refetch({ showLoading: false });
+    } catch (err) {
+      if (err instanceof BookingApiError) {
+        setMutationError(err.message);
+        if (err.status === 409 || err.status === 404) {
+          await refetch({ showLoading: false });
+        }
+      } else {
+        setMutationError("Something went wrong. Please try again.");
+      }
+      throw err;
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function createBooking(input: BookingInput) {
+    return runMutation(async () => {
+      await apiCreate(input);
+    });
+  }
+
+  async function updateBooking(id: string, patch: BookingPatch) {
+    return runMutation(async () => {
+      await apiUpdate(id, patch);
+    });
+  }
+
+  async function deleteBooking(id: string) {
+    return runMutation(async () => {
+      await apiDelete(id);
+    });
+  }
+
+  function clearMutationError() {
+    setMutationError(null);
+  }
 
   return {
     bookings,

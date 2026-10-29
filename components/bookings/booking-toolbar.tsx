@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui/button";
+
 type BookingToolbarProps = {
   selectedId: string | null;
   submitting: boolean;
@@ -8,9 +10,6 @@ type BookingToolbarProps = {
   onEdit: () => void;
   onDelete: () => void;
 };
-
-const disabledBtn =
-  "disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-zinc-100 disabled:text-zinc-400 dark:disabled:border-zinc-700 dark:disabled:bg-zinc-800 dark:disabled:text-zinc-500";
 
 export function BookingToolbar({
   selectedId,
@@ -31,35 +30,38 @@ export function BookingToolbar({
   return (
     <div className="flex flex-wrap items-center gap-2">
       {showCreate ? (
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="sm"
           onClick={onNew}
           disabled={submitting}
-          className={`rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-900 dark:hover:bg-zinc-800 ${disabledBtn}`}
         >
           + Book
-        </button>
+        </Button>
       ) : null}
       {showEditDelete ? (
         <>
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={onEdit}
             disabled={submitting}
             aria-label="Edit selected booking"
-            className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-900 dark:hover:bg-zinc-800"
           >
             Edit selected
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="destructiveOutline"
+            size="sm"
             onClick={onDelete}
             disabled={submitting}
             aria-label="Delete selected booking"
-            className="rounded-md border border-red-300 bg-white px-3 py-2 text-sm font-medium text-red-800 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-red-800 dark:bg-zinc-900 dark:text-red-200 dark:hover:bg-red-950/40"
           >
             Delete selected
-          </button>
+          </Button>
         </>
       ) : null}
     </div>

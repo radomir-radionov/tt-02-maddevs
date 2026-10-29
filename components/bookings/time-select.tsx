@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const VISIBLE_OPTIONS = 5;
 const OPTION_HEIGHT_REM = 2.5;
@@ -155,10 +157,11 @@ export function TimeSelect({
 
   return (
     <div ref={rootRef} className="relative w-[6.25rem] max-w-full shrink-0">
-      <button
+      <Button
         ref={triggerRef}
         id={id}
         type="button"
+        variant="unstyled"
         disabled={disabled || options.length === 0}
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -169,13 +172,16 @@ export function TimeSelect({
           }
         }}
         onKeyDown={handleKeyDown}
-        className={`booking-time-select flex w-full items-center justify-between gap-1.5 text-left ${className}`}
+        className={cn(
+          "booking-time-select w-full items-center justify-between gap-1.5 text-left font-normal",
+          className,
+        )}
       >
         <span className="truncate tabular-nums">
           {options.length === 0 ? "—" : value}
         </span>
         <ChevronDownIcon />
-      </button>
+      </Button>
       {open && options.length > 0 && listPosition ? (
         <ul
           ref={listRef}
@@ -195,9 +201,10 @@ export function TimeSelect({
             const optionDisabled = isOptionDisabled?.(option) ?? false;
             return (
               <li key={option} role="presentation">
-                <button
+                <Button
                   type="button"
                   role="option"
+                  variant="ghost"
                   disabled={optionDisabled}
                   data-selected={isSelected ? "true" : undefined}
                   aria-selected={isSelected}
@@ -207,18 +214,16 @@ export function TimeSelect({
                       commit(option);
                     }
                   }}
-                  className={`flex h-10 w-full items-center px-2.5 text-left text-sm tabular-nums disabled:cursor-not-allowed disabled:text-zinc-400 dark:disabled:text-zinc-500 ${
-                    optionDisabled
-                      ? "opacity-50"
-                      : "hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                  } ${
+                  className={cn(
+                    "h-10 w-full justify-start rounded-none px-2.5 font-normal tabular-nums disabled:text-zinc-400 dark:disabled:text-zinc-500",
+                    optionDisabled ? "opacity-50" : undefined,
                     isSelected
-                      ? "bg-blue-50 font-medium text-blue-900 dark:bg-blue-950/50 dark:text-blue-100"
-                      : "text-zinc-900 dark:text-zinc-100"
-                  }`}
+                      ? "bg-blue-50 font-medium text-blue-900 hover:bg-blue-50 dark:bg-blue-950/50 dark:text-blue-100 dark:hover:bg-blue-950/50"
+                      : "text-zinc-900 dark:text-zinc-100",
+                  )}
                 >
                   {option}
-                </button>
+                </Button>
               </li>
             );
           })}

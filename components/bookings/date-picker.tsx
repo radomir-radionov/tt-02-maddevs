@@ -5,6 +5,9 @@ import {
   BookingCalendar,
   viewFromDate,
 } from "@/components/bookings/booking-calendar";
+import { Button } from "@/components/ui/button";
+import { fieldControlClasses } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import { formatDisplayDate } from "@/lib/bookings/calendar";
 import {
   isPastDate,
@@ -73,9 +76,7 @@ export function DatePicker({ id, value, onCommit, now }: DatePickerProps) {
     setOpen(false);
   };
 
-  const fieldClass = committedPast
-    ? "border-zinc-300 bg-zinc-100 text-zinc-600 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
-    : "border-zinc-300 bg-white text-zinc-900 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100";
+  const fieldClass = fieldControlClasses(committedPast);
 
   return (
     <div
@@ -90,17 +91,21 @@ export function DatePicker({ id, value, onCommit, now }: DatePickerProps) {
         Date
       </label>
 
-      <button
+      <Button
         id={id}
         type="button"
+        variant="unstyled"
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => setOpen((prev) => !prev)}
-        className={`flex w-full items-center justify-between gap-2 rounded-md border px-3 py-2 text-left text-sm ${fieldClass}`}
+        className={cn(
+          "w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm",
+          fieldClass,
+        )}
       >
         <span>{value ? formatDisplayDate(value) : "Pick a date"}</span>
         <CalendarIcon />
-      </button>
+      </Button>
 
       {open ? (
         <div className="absolute left-0 top-full z-50 mt-1">

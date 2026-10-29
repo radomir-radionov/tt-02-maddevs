@@ -9,6 +9,7 @@ import {
   workDayLengthMinutes,
 } from "@/lib/bookings/time";
 import type { Booking } from "@/lib/bookings/types";
+import { Button } from "@/components/ui/button";
 
 type BookingTimelineProps = {
   date: string;
@@ -138,16 +139,17 @@ export function BookingTimeline({
             const height = Math.max(minuteToTopPx(end, dayMinutes) - top, 24);
             const isSelected = booking.id === selectedId;
             return (
-              <button
+              <Button
                 key={booking.id}
                 type="button"
+                variant="unstyled"
                 onClick={(event) => {
                   event.stopPropagation();
                   onSelect(booking.id);
                 }}
                 aria-pressed={isSelected}
                 aria-label={`Booking ${booking.start} to ${booking.end}${booking.title ? `: ${booking.title}` : ""}`}
-                className={`absolute left-2 right-2 z-20 cursor-pointer overflow-hidden rounded-md border px-2 py-1 text-left text-xs shadow-sm ${
+                className={`absolute left-2 right-2 z-20 items-start justify-start overflow-hidden rounded-md border px-2 py-1 text-left text-xs shadow-sm ${
                   isSelected
                     ? "border-blue-600 bg-blue-100 ring-2 ring-blue-400 dark:bg-blue-950"
                     : "border-blue-300 bg-blue-50 hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-950/60"
@@ -162,7 +164,7 @@ export function BookingTimeline({
                     {booking.title}
                   </span>
                 ) : null}
-              </button>
+              </Button>
             );
           })}
         </div>

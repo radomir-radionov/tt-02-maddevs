@@ -7,6 +7,7 @@ import {
   shiftMonth,
   WEEKDAY_LABELS,
 } from "@/lib/bookings/calendar";
+import { Button } from "@/components/ui/button";
 import { isPastDate, isToday } from "@/lib/bookings/time";
 
 type BookingCalendarProps = {
@@ -39,28 +40,30 @@ export function BookingCalendar({
           {MONTH_NAMES[viewMonthIndex]} {viewYear}
         </p>
         <div className="flex items-center gap-0.5">
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="xs"
             aria-label="Previous month"
             onClick={() => {
               const next = shiftMonth(viewYear, viewMonthIndex, -1);
               onViewChange(next.year, next.monthIndex);
             }}
-            className="rounded px-1.5 py-1 text-xs text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
           >
             ◀
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="ghost"
+            size="xs"
             aria-label="Next month"
             onClick={() => {
               const next = shiftMonth(viewYear, viewMonthIndex, 1);
               onViewChange(next.year, next.monthIndex);
             }}
-            className="rounded px-1.5 py-1 text-xs text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
           >
             ▶
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -108,9 +111,10 @@ export function BookingCalendar({
           }
 
           return (
-            <button
+            <Button
               key={cell.date}
               type="button"
+              variant="unstyled"
               role="gridcell"
               aria-selected={isSelected}
               aria-label={cell.date}
@@ -118,26 +122,18 @@ export function BookingCalendar({
               className={cellClass}
             >
               {cell.day}
-            </button>
+            </Button>
           );
         })}
       </div>
 
       <div className="mt-3 flex justify-between border-t border-zinc-100 pt-2 text-sm dark:border-zinc-800">
-        <button
-          type="button"
-          onClick={onClear}
-          className="text-blue-600 hover:underline dark:text-blue-400"
-        >
+        <Button type="button" variant="link" onClick={onClear}>
           Clear
-        </button>
-        <button
-          type="button"
-          onClick={onToday}
-          className="text-blue-600 hover:underline dark:text-blue-400"
-        >
+        </Button>
+        <Button type="button" variant="link" onClick={onToday}>
           Today
-        </button>
+        </Button>
       </div>
     </div>
   );

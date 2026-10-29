@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Button } from "@/components/ui/button";
 
 type StatusBannerProps = {
   loadStatus: "idle" | "loading" | "error";
@@ -23,13 +24,14 @@ export function StatusBanner({
         className="flex flex-wrap items-center gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-100"
       >
         <span>{loadError}</span>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          className="h-auto min-h-0 px-0 py-0 underline"
           onClick={onRetry}
-          className="rounded underline focus-visible:outline-offset-2"
         >
           Retry
-        </button>
+        </Button>
       </div>,
     );
   }

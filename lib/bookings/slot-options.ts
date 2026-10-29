@@ -53,7 +53,7 @@ export function getAvailableEndOptions(
 /** Start times that are allowed and have at least one valid end time. */
 export function getAvailableStartOptions(ctx: SlotPickerContext): string[] {
   return getAllStartTimeOptions().filter((start) => {
-    if (ctx.mode === "create" && isToday(ctx.date, ctx.now)) {
+    if (isToday(ctx.date, ctx.now)) {
       const minutes = parseTime(start);
       if (minutes === null || isStartInPast(ctx.date, minutes, ctx.now)) {
         return false;
