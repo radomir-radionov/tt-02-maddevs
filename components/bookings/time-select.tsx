@@ -14,9 +14,8 @@ import {
 import { formatMinutes } from "@/lib/bookings/time";
 import { cn } from "@/lib/utils";
 
-const VISIBLE_OPTIONS = 6;
-/** ~6 SelectItem rows (py-1 + text-sm) then scroll */
-const SELECT_LIST_CLASS = `max-h-[calc(1.75rem*${VISIBLE_OPTIONS}+0.5rem)]`;
+/** Scroll after ~6 options (static class — required for Tailwind scan). */
+const SELECT_LIST_CLASS = "max-h-52";
 
 type TimeSelectProps = {
   id: string;
@@ -106,7 +105,6 @@ function PartSelect({
         <SelectValue placeholder="—" />
       </SelectTrigger>
       <SelectContent
-        className="max-h-none"
         listClassName={SELECT_LIST_CLASS}
         alignItemWithTrigger={false}
         side="bottom"
